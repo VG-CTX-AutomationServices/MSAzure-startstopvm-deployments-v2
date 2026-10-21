@@ -122,20 +122,21 @@ The configuration has three parts:
 
 ## 3.1 Understand how tags work
 
-Control each VM with the `ssv2excludevm` tag:
+At subscription scope, the solution targets **every VM** in the subscription, including VMs with no tag. Use the `ssv2excludevm` tag to control individual VMs:
 
 | Tag | Value | Effect |
 | --- | --- | --- |
 | `ssv2excludevm` | `false` | VM is **included** in start and stop actions. |
 | `ssv2excludevm` | `true` | VM is **excluded** from start and stop actions. |
+| *(no tag)* | n/a | VM is **included**, same as `false`. |
 | `sequencestart` / `sequencestop` | Number 1..N | VM is started or stopped in that order. Only used by the [Sequenced](#a3-sequenced-start-and-stop) Logic Apps. |
 
 Recommended approach for a central deployment:
 
-- Tag every VM you want managed with `ssv2excludevm=false`.
 - Tag any VM that must never be touched with `ssv2excludevm=true`.
+- Optionally tag VMs you want managed with `ssv2excludevm=false` to make the intent explicit.
 
-> **TODO (pending test):** Behavior of VMs with no `ssv2excludevm` tag at subscription scope is not documented by Microsoft. Update this note after testing in our environment. Until then, tag VMs explicitly.
+> **Important:** New VMs created in the subscription are targeted automatically unless they carry `ssv2excludevm=true`. Consider an Azure Policy that applies the exclude tag by default to sensitive workloads.
 
 ### Tag a VM (portal)
 
@@ -272,7 +273,7 @@ Same steps, with:
 1. In a test subscription, create three VMs: one tagged `ssv2excludevm=false`, one tagged `ssv2excludevm=true`, and one with no tag.
 2. Open the stop Logic App and select **Run trigger** > **Run**.
 3. Check **Runs history** for a successful run.
-4. Confirm which VMs stopped in the portal and review the dashboard (see [Manage and monitor](#4-manage-and-monitor)). Record the result for the untagged VM to resolve the TODO in [3.1](#31-understand-how-tags-work).
+4. Confirm in the portal that the `false` and untagged VMs stopped and the `true` VM did not. Review the dashboard (see [Manage and monitor](#4-manage-and-monitor)).
 
 ---
 
@@ -283,7 +284,7 @@ Same steps, with:
 | Change a schedule | Edit **Recurrence** in the Logic App, then **Save**. |
 | Pause a schedule | Open the Logic App and select **Disable**. |
 | Exclude a VM | Set tag `ssv2excludevm=true` on the VM. |
-| Include a VM | Set tag `ssv2excludevm=false` on the VM. |
+| Include a VM | Remove the tag or set `ssv2excludevm=false` on the VM. |
 | View activity | Open the Azure dashboard created by the deployment in the resource group, or query Application Insights. Tiles refresh hourly. |
 | Change email recipients | In **Monitor** > **Alerts** > **Action groups**, open `StartStopV2_VM_Notification` and edit the notification settings. |
 | Check a failed run | Logic App **Runs history**, then the Function App logs in Application Insights. |
